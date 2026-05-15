@@ -1,0 +1,40 @@
+{
+  "name": "llm-responses-proxy",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Local proxy that converts OpenAI Responses API to Chat Completions API, enabling Responses API clients to work with any LLM provider",
+  "main": "src/index.js",
+  "bin": {
+    "llm-responses-proxy": "src/cli.js"
+  },
+  "scripts": {
+    "start": "node src/cli.js start",
+    "test": "node --test test/",
+    "prepublishOnly": "npm test"
+  },
+  "files": [
+    "src/",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "openai",
+    "responses-api",
+    "chat-completions",
+    "proxy",
+    "llm",
+    "ai"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wanna-money/llm-responses-proxy.git"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,15 @@
+node_modules/
+logs/
+.env
+.env.*
+test/tmp-config.json
+
+# Contains API keys — use config.example.json as template
+config.json
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+
+docs/superpowers/

@@ -1,0 +1,23 @@
+{
+  "port": 18188,
+  "uiPort": 18189,
+  "activeProvider": "openai",
+  "providers": [
+    {
+      "name": "openai",
+      "baseUrl": "https://api.openai.com",
+      "apiKey": "sk-..."
+    },
+    {
+      "name": "azure-openai",
+      "baseUrl": "https://YOUR_RESOURCE.openai.azure.com",
+      "apiKey": "your-azure-key"
+    },
+    {
+      "name": "anthropic-native",
+      "baseUrl": "https://api.anthropic.com",
+      "apiKey": "sk-ant-...",
+      "responsesPassthrough": false
+    }
+  ]
+}

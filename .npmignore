@@ -1,0 +1,18 @@
+# Never publish — contains API keys and local paths
+config.json
+logs/
+
+# Dev/test artifacts
+test/
+*.log
+.env
+.env.*
+
+# Claude Code / tooling internals
+.claude/
+docs/superpowers/
+
+# Editor/OS
+.DS_Store
+.vscode/
+.idea/

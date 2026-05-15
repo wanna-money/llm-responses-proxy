@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLM Responses Proxy — Config</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0d1117; color: #c9d1d9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; padding: 24px; min-height: 100vh; }
+  h1 { font-size: 18px; font-weight: 600; color: #e6edf3; margin-bottom: 24px; display: flex; align-items: center; gap: 10px; }
+  h1 span { color: #58a6ff; }
+  h2 { font-size: 13px; font-weight: 600; color: #8b949e; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 12px; }
+  .section { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+  label { display: block; font-size: 12px; color: #8b949e; margin-bottom: 4px; margin-top: 12px; }
+  label:first-of-type { margin-top: 0; }
+  input[type=text], input[type=number], input[type=password] {
+    width: 100%; background: #0d1117; border: 1px solid #30363d; border-radius: 6px;
+    color: #c9d1d9; font-size: 13px; padding: 7px 10px; outline: none; transition: border-color .15s;
+  }
+  input:focus { border-color: #58a6ff; }
+  .provider-card { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 16px; margin-bottom: 12px; position: relative; }
+  .provider-card.active { border-color: #238636; }
+  .card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .card-title { font-weight: 600; color: #e6edf3; font-size: 14px; flex: 1; }
+  .badge { background: #238636; color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+  .card-actions { display: flex; gap: 6px; }
+  button { cursor: pointer; border: none; border-radius: 6px; font-size: 12px; font-weight: 500; padding: 5px 12px; transition: opacity .15s; }
+  button:hover { opacity: .85; }
+  .btn-primary { background: #238636; color: #fff; }
+  .btn-secondary { background: #21262d; color: #c9d1d9; border: 1px solid #30363d; }
+  .btn-danger { background: #b62324; color: #fff; }
+  .btn-large { font-size: 13px; padding: 8px 18px; }
+  .actions { display: flex; gap: 10px; margin-top: 8px; }
+  #toast {
+    position: fixed; bottom: 24px; right: 24px; background: #238636; color: #fff;
+    padding: 10px 18px; border-radius: 8px; font-size: 13px; opacity: 0;
+    transition: opacity .25s; pointer-events: none; z-index: 999;
+  }
+  #toast.error { background: #b62324; }
+  #toast.show { opacity: 1; }
+  .divider { border: none; border-top: 1px solid #21262d; margin: 16px 0; }
+  .checkbox-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+  .checkbox-row input[type=checkbox] { width: 14px; height: 14px; accent-color: #58a6ff; cursor: pointer; }
+  .checkbox-row label { margin: 0; color: #c9d1d9; font-size: 12px; cursor: pointer; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 1px solid #30363d; }
+  .tab { padding: 8px 18px; font-size: 13px; font-weight: 500; color: #8b949e; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tab.active { color: #e6edf3; border-bottom-color: #58a6ff; }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+
+  /* Logs */
+  .log-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .log-count { font-size: 12px; color: #8b949e; margin-left: auto; }
+  .log-entry { background: #161b22; border: 1px solid #30363d; border-radius: 6px; margin-bottom: 8px; overflow: hidden; }
+  .log-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer; user-select: none; }
+  .log-row:hover { background: #1c2128; }
+  .log-ts { font-size: 11px; color: #8b949e; white-space: nowrap; }
+  .log-status { font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 4px; white-space: nowrap; }
+  .log-status.ok { background: #1a3a25; color: #3fb950; }
+  .log-status.err { background: #3d1515; color: #f85149; }
+  .log-url { font-size: 12px; color: #c9d1d9; font-family: monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 0 1 auto; min-width: 0; max-width: 50%; }
+  .log-url:hover { color: #58a6ff; }
+  .log-url.copied { color: #3fb950; }
+  .log-stream { font-size: 11px; color: #58a6ff; }
+  .log-chevron { color: #8b949e; font-size: 11px; transition: transform .2s; }
+  .log-entry.open .log-chevron { transform: rotate(90deg); }
+  .log-detail { display: none; padding: 12px 14px; border-top: 1px solid #21262d; }
+  .log-entry.open .log-detail { display: block; }
+  .pre-wrap pre { background: #0d1117; border: 1px solid #30363d; border-radius: 4px; padding: 10px; font-size: 11px; color: #c9d1d9; overflow: auto; max-height: 300px; white-space: pre-wrap; word-break: break-all; overflow-wrap: break-word; }
+  .detail-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; margin-top: 12px; }
+  .detail-header:first-child { margin-top: 0; }
+  .detail-header h3 { font-size: 11px; color: #8b949e; text-transform: uppercase; letter-spacing: .06em; margin: 0; }
+  .copy-btn { background: #21262d; border: 1px solid #30363d; color: #8b949e; font-size: 11px; padding: 2px 8px; border-radius: 4px; cursor: pointer; }
+  .copy-btn:hover { color: #e6edf3; border-color: #8b949e; }
+  .copy-btn.copied { color: #3fb950; border-color: #3fb950; }
+  .pagination { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
+  .page-info { font-size: 12px; color: #8b949e; }
+  /* Status bar */
+  .status-bar { display: flex; align-items: center; gap: 12px; background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .status-dot.running { background: #3fb950; box-shadow: 0 0 6px #3fb950; }
+  .status-dot.starting { background: #d29922; box-shadow: 0 0 6px #d29922; animation: pulse .8s infinite alternate; }
+  .status-dot.stopped { background: #8b949e; }
+  .status-dot.error { background: #f85149; box-shadow: 0 0 6px #f85149; }
+  @keyframes pulse { from { opacity: 1; } to { opacity: .3; } }
+  .status-text { font-size: 13px; color: #c9d1d9; flex: 1; }
+  .status-text strong { color: #e6edf3; }
+  .status-meta { font-size: 11px; color: #8b949e; }
+  .status-error { font-size: 11px; color: #f85149; margin-top: 2px; }
+</style>
+</head>
+<body>
+<h1>LLM Responses Proxy <span>Config</span></h1>
+
+<div class="status-bar" id="status-bar">
+  <div class="status-dot stopped" id="status-dot"></div>
+  <div style="flex:1">
+    <div class="status-text">代理状态：<strong id="status-label">加载中…</strong> <span class="status-meta" id="status-meta"></span></div>
+    <div class="status-error" id="status-error" style="display:none"></div>
+  </div>
+  <button class="btn-secondary" id="btn-restart" onclick="restartProxy()" style="flex-shrink:0">重启代理</button>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('config')">配置</div>
+  <div class="tab" onclick="switchTab('logs')">日志</div>
+</div>
+
+<div id="tab-config" class="tab-pane active">
+  <div class="section">
+    <h2>Global Settings</h2>
+    <label for="port">Port</label>
+    <input type="number" id="port" min="1" max="65535">
+  </div>
+
+  <div class="section">
+    <h2>Providers</h2>
+    <div id="providers"></div>
+    <button class="btn-secondary" onclick="addProvider()">+ Add Provider</button>
+  </div>
+
+  <div class="actions">
+    <button class="btn-primary btn-large" onclick="saveConfig()">Save</button>
+    <button class="btn-secondary btn-large" onclick="loadConfig()">Reload</button>
+  </div>
+</div>
+
+<div id="tab-logs" class="tab-pane">
+  <div class="log-toolbar">
+    <button class="btn-danger" onclick="clearLogs()">清空</button>
+    <button class="btn-secondary" onclick="loadLogs(0)">刷新</button>
+    <span class="log-count" id="log-count"></span>
+  </div>
+  <div id="log-list"></div>
+  <div class="pagination" id="log-pagination"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+let cfg = { port: 18188, activeProvider: '', providers: [] };
+let logOffset = 0;
+const LOG_LIMIT = 50;
+let logData = {};
+let statusTimer = null;
+
+const STATUS_LABEL = { running: '运行中', starting: '启动中', stopped: '已停止', error: '异常' };
+
+async function pollStatus(suppressError = false) {
+  try {
+    const r = await fetch('/api/status');
+    const s = await r.json();
+    const dot = document.getElementById('status-dot');
+    const effectiveStatus = (suppressError && s.status === 'error') ? 'starting' : s.status;
+    dot.className = `status-dot ${effectiveStatus}`;
+    document.getElementById('status-label').textContent =
+      (STATUS_LABEL[effectiveStatus] || effectiveStatus) + (s.proxyPort ? `  :${s.proxyPort}` : '');
+    const meta = document.getElementById('status-meta');
+    meta.textContent = s.startedAt ? `启动于 ${new Date(s.startedAt).toLocaleString()}` : '';
+    const errEl = document.getElementById('status-error');
+    if (s.lastError && !suppressError) { errEl.textContent = s.lastError; errEl.style.display = ''; }
+    else errEl.style.display = 'none';
+    document.getElementById('btn-restart').disabled = effectiveStatus === 'starting';
+  } catch {
+    if (!suppressError) {
+      document.getElementById('status-label').textContent = '无法连接';
+      document.getElementById('status-dot').className = 'status-dot error';
+    }
+  }
+}
+
+async function restartProxy() {
+  document.getElementById('btn-restart').disabled = true;
+  try {
+    await fetch('/api/restart', { method: 'POST' });
+    toast('重启中…');
+    // suppress error display for 5s while proxy is starting up
+    const endTime = Date.now() + 5000;
+    const checkRunning = async () => {
+      await pollStatus(endTime > Date.now());
+      if (document.getElementById('status-dot').classList.contains('running')) return;
+      if (Date.now() < endTime) setTimeout(checkRunning, 800);
+    };
+    setTimeout(checkRunning, 500);
+  } catch(e) {
+    toast('重启失败: ' + e.message, true);
+    document.getElementById('btn-restart').disabled = false;
+  }
+}
+
+function copyLog(i, which) {
+  const text = logData[i] && logData[i][which];
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    const el = document.querySelector(`[data-copy="${i}-${which}"]`);
+    if (!el) return;
+    const orig = el.textContent;
+    el.textContent = which === 'url' ? '已复制' : '已复制';
+    el.classList.add('copied');
+    setTimeout(() => { el.textContent = orig; el.classList.remove('copied'); }, 1500);
+  });
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    const names = ['config', 'logs'];
+    t.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'logs') loadLogs(0);
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function loadConfig() {
+  try {
+    const r = await fetch('/api/config');
+    cfg = await r.json();
+    // #4: track original name so key-merge works even after rename
+    if (Array.isArray(cfg.providers)) {
+      cfg.providers = cfg.providers.map(p => ({ ...p, _originalName: p.name }));
+    }
+    render();
+  } catch(e) {
+    toast('Failed to load config: ' + e.message, true);
+  }
+}
+
+async function saveConfig() {
+  try {
+    collectFromDOM();
+  } catch(e) {
+    toast('Validation error: ' + e.message, true);
+    return;
+  }
+  try {
+    const r = await fetch('/api/config', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(cfg)
+    });
+    if (!r.ok) {
+      let errMsg;
+      try { const j = await r.json(); errMsg = j.error || JSON.stringify(j); } catch { errMsg = await r.text(); }
+      throw new Error(errMsg);
+    }
+    // #7: after successful save, sync _originalName so consecutive renames work correctly
+    cfg.providers = cfg.providers.map(p => ({ ...p, _originalName: p.name }));
+    toast('Saved');
+  } catch(e) {
+    toast('Save failed: ' + e.message, true);
+  }
+}
+
+function collectFromDOM() {
+  const rawPort = document.getElementById('port').value.trim();
+  if (rawPort !== '') {
+    // parseInt("123abc") = 123 — use Number() which returns NaN for mixed strings
+    const parsedPort = Number(rawPort);
+    if (!Number.isInteger(parsedPort) || parsedPort < 1 || parsedPort > 65535) {
+      throw new Error(`Invalid port: "${rawPort}". Must be a whole number between 1 and 65535.`);
+    }
+    cfg.port = parsedPort;
+  }
+  cfg.providers = cfg.providers.map((p, i) => {
+    const card = document.querySelector(`[data-idx="${i}"]`);
+    if (!card) return p;
+    const val = k => card.querySelector(`[data-field="${k}"]`).value.trim();
+    const apiKey = val('apiKey');
+    const responsesPassthrough = card.querySelector('[data-field="responsesPassthrough"]').checked;
+    return {
+      name: val('name'),
+      baseUrl: val('baseUrl'),
+      apiKey: apiKey.startsWith('*') ? p.apiKey : apiKey,
+      ...(responsesPassthrough ? { responsesPassthrough: true } : {}),
+      // #4: carry _originalName so backend can merge key by original name on rename
+      ...(p._originalName ? { _originalName: p._originalName } : {})
+    };
+  });
+  // sync activeProvider if the active provider's name was renamed in the form
+  const activeProvider = cfg.providers.find(p => p._originalName === cfg.activeProvider || p.name === cfg.activeProvider);
+  if (activeProvider) cfg.activeProvider = activeProvider.name;
+}
+
+function render() {
+  document.getElementById('port').value = cfg.port || 18188;
+  const container = document.getElementById('providers');
+  container.innerHTML = cfg.providers.map((p, i) => `
+    <div class="provider-card ${p.name === cfg.activeProvider ? 'active' : ''}" data-idx="${i}">
+      <div class="card-header">
+        <span class="card-title">${esc(p.name || 'New Provider')}</span>
+        ${p.name === cfg.activeProvider ? '<span class="badge">Active</span>' : ''}
+        <div class="card-actions">
+          ${p.name !== cfg.activeProvider ? `<button class="btn-secondary" onclick="setActive(${i})">Set Active</button>` : ''}
+          <button class="btn-danger" onclick="removeProvider(${i})">Remove</button>
+        </div>
+      </div>
+      <label>Name</label>
+      <input type="text" data-field="name" value="${esc(p.name)}">
+      <label>Base URL</label>
+      <input type="text" data-field="baseUrl" value="${esc(p.baseUrl)}">
+      <label>API Key</label>
+      <input type="password" data-field="apiKey" value="${esc(p.apiKey)}" placeholder="sk-…">
+      <div class="checkbox-row">
+        <input type="checkbox" data-field="responsesPassthrough" id="rpt-${i}" ${p.responsesPassthrough ? 'checked' : ''}>
+        <label for="rpt-${i}">Responses API passthrough (upstream supports /v1/responses natively)</label>
+      </div>
+    </div>
+  `).join('');
+}
+
+function setActive(i) {
+  collectFromDOM();
+  cfg.activeProvider = cfg.providers[i].name;
+  render();
+}
+
+function removeProvider(i) {
+  collectFromDOM();
+  cfg.providers.splice(i, 1);
+  if (cfg.providers.length && !cfg.providers.find(p => p.name === cfg.activeProvider)) {
+    cfg.activeProvider = cfg.providers[0].name;
+  }
+  render();
+}
+
+function addProvider() {
+  collectFromDOM();
+  cfg.providers.push({ name: 'new-provider', baseUrl: 'https://api.openai.com', apiKey: '' });
+  render();
+  const cards = document.querySelectorAll('.provider-card');
+  cards[cards.length - 1].querySelector('[data-field="name"]').focus();
+}
+
+async function clearLogs() {
+  if (!confirm('确认清空所有日志？')) return;
+  try {
+    await fetch('/api/logs', { method: 'DELETE' });
+    loadLogs(0);
+  } catch(e) {
+    toast('清空失败: ' + e.message, true);
+  }
+}
+
+async function loadLogs(offset) {
+  logOffset = offset;
+  try {
+    const r = await fetch(`/api/logs?limit=${LOG_LIMIT}&offset=${offset}`);
+    const data = await r.json();
+    renderLogs(data, offset);
+  } catch(e) {
+    toast('Failed to load logs: ' + e.message, true);
+  }
+}
+
+function renderLogs({ total, entries }, offset) {
+  document.getElementById('log-count').textContent = `共 ${total} 条`;
+  const list = document.getElementById('log-list');
+  if (!entries.length) {
+    list.innerHTML = '<div style="color:#8b949e;font-size:13px;padding:20px 0;">暂无日志</div>';
+  } else {
+    logData = {};
+    list.innerHTML = entries.map((e, i) => {
+      const statusOk = e.resStatus >= 200 && e.resStatus < 400;
+      const reqJson = e.reqBody ? JSON.stringify(e.reqBody, null, 2) : null;
+      const resJson = e.resBody ? JSON.stringify(e.resBody, null, 2) : null;
+      logData[i] = { req: reqJson, res: resJson, url: e.url };
+      return `
+        <div class="log-entry" id="log-${i}">
+          <div class="log-row" onclick="toggleLog(${i})">
+            <span class="log-ts">${e.ts ? new Date(e.ts).toLocaleString() : ''}</span>
+            <span class="log-status ${statusOk ? 'ok' : 'err'}">${e.resStatus || '—'}</span>
+            <span class="log-url" title="点击复制" onclick="event.stopPropagation();copyLog(${i},'url')" style="cursor:pointer;" data-copy="${i}-url">${esc(e.url)}</span>
+            <span style="flex:1"></span>
+            ${e.stream ? '<span class="log-stream">stream</span>' : ''}
+            <span class="log-chevron">▶</span>
+          </div>
+          <div class="log-detail">
+            ${reqJson ? `<div class="detail-header"><h3>Request Body</h3><button class="copy-btn" data-copy="${i}-req" onclick="copyLog(${i},'req')">复制</button></div><div class="pre-wrap"><pre>${esc(reqJson)}</pre></div>` : ''}
+            ${resJson ? `<div class="detail-header"><h3>Response Body</h3><button class="copy-btn" data-copy="${i}-res" onclick="copyLog(${i},'res')">复制</button></div><div class="pre-wrap"><pre>${esc(resJson)}</pre></div>` : ''}
+            ${!reqJson && !resJson ? '<span style="color:#8b949e;font-size:12px;">无详情（流式请求）</span>' : ''}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  const pagination = document.getElementById('log-pagination');
+  const hasPrev = offset > 0;
+  const hasNext = offset + LOG_LIMIT < total;
+  if (total <= LOG_LIMIT) {
+    pagination.innerHTML = '';
+  } else {
+    pagination.innerHTML = `
+      <button class="btn-secondary" onclick="loadLogs(${offset - LOG_LIMIT})" ${hasPrev ? '' : 'disabled'}>上一页</button>
+      <span class="page-info">${offset + 1}–${Math.min(offset + LOG_LIMIT, total)} / ${total}</span>
+      <button class="btn-secondary" onclick="loadLogs(${offset + LOG_LIMIT})" ${hasNext ? '' : 'disabled'}>下一页</button>
+    `;
+  }
+}
+
+function toggleLog(i) {
+  document.getElementById('log-' + i).classList.toggle('open');
+}
+
+function toast(msg, isError = false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = isError ? 'error show' : 'show';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+loadConfig();
+pollStatus();
+statusTimer = setInterval(pollStatus, 3000);
+</script>
+</body>
+</html>
